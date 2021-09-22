@@ -1,10 +1,10 @@
 import React from "react";
 import { Route, Switch } from "react-router-dom";
-import Home from "./home";
+import List from "./list";
 const App = ({ match }) => (
   <div>
     <Switch>
-      <Route path={`${match.url}`} component={Home} />
+      <Route path={`${match.url}`} component={List} />
     </Switch>
   </div>
 );

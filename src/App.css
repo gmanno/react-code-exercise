@@ -21,3 +21,7 @@
 .App-intro {
   font-size: large;
 }
+
+.form-check-label {
+  text-transform: capitalize;
+}
