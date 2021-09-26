@@ -4,6 +4,7 @@ import { usStates } from "../util/states";
 import { useForm } from "react-hook-form";
 import { Range } from "rc-slider";
 import "rc-slider/assets/index.css";
+import encodeUrl from "encodeurl";
 
 import {
   InputGroup,
@@ -18,23 +19,28 @@ import {
 import Table from "../components/table";
 
 const Home = () => {
-  const { register, handleSubmit } = useForm();
   const chambers = ["senate", "house"];
+  const [chamber, setChamber] = useState("senate"); // or 'house'
   const [session, setSession] = useState(115); // 115th congressional session
+  const [shareUrl, setShareUrl] = useState(
+    `?chamber=${chamber}&session=${session}`
+  );
   const sessionField = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [showRange, setShowRange] = useState("0% - 100%");
-  const rangeField = useRef(null);
+  const [showRange, setShowRange] = useState([0, 100]);
+  const [showRangeMissedVotes, setShowRangeMissedVotes] = useState([0, 100]);
   const [showCanvas, setShowCanvas] = useState(false);
-
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [chamber, setChamber] = useState("senate"); // or 'house'
   const [membersList, setMembersList] = useState(null);
   const [filteredMembersList, setFilteredMembersList] = useState(null);
+  const { register, handleSubmit } = useForm();
+  const rangeField = useRef(null);
+  const rangeFieldMissedVotes = useRef(null);
 
   const getMembers = () => {
     setLoading(true);
+    setShareUrl(`?chamber=${chamber}&session=${session}`);
     httpClient
       .get(`${session}/${chamber}/members.json`)
       .then(({ data }) => {
@@ -45,6 +51,7 @@ const Home = () => {
           alert("No records found");
         }
         setMembersList(members);
+        setCurrentPage(1);
         setFilteredMembersList(members);
         setTotalPages(Math.ceil(members.length / 10));
         setLoading(false);
@@ -64,8 +71,10 @@ const Home = () => {
   const onSubmit = (values) => {
     let filtered = membersList;
     let fields = [];
+    let url = "";
     Object.keys(values).forEach((filter) => {
       if (values[`${filter}`] != "") {
+        url += `&${filter}=${values[`${filter}`]}`;
         switch (filter) {
           case "name":
             filtered = filtered.filter((item) => {
@@ -109,6 +118,14 @@ const Home = () => {
         rangeField.current.state.bounds[1] >= item.votes_with_party_pct
       );
     });
+    filtered = filtered.filter((item) => {
+      return (
+        rangeFieldMissedVotes.current.state.bounds[0] <= item.missed_votes &&
+        rangeFieldMissedVotes.current.state.bounds[1] >= item.missed_votes
+      );
+    });
+
+    setShareUrl(`?chamber=${chamber}&session=${session}${url}`);
 
     setTotalPages(Math.ceil(filtered.length / 10));
     setFilteredMembersList(filtered);
@@ -124,7 +141,10 @@ const Home = () => {
   };
 
   const rangePct = (event) => {
-    setShowRange(`${event[0]}% - ${event[1]}%`);
+    setShowRange([event[0], event[1]]);
+  };
+  const rangePctMissedVotes = (event) => {
+    setShowRangeMissedVotes([event[0], event[1]]);
   };
   return (
     <>
@@ -182,10 +202,19 @@ const Home = () => {
               <Form.Label>Votes With Party</Form.Label>
               <Range
                 ref={rangeField}
-                defaultValue={[0, 100]}
+                defaultValue={showRange}
                 onChange={rangePct}
               />
-              <Form.Text className="text-muted">{showRange}</Form.Text>
+              <Form.Text className="text-muted">{`${showRange[0]}% - ${showRange[1]}%`}</Form.Text>
+            </Form.Group>
+            <Form.Group controlId="missed_votes">
+              <Form.Label>Missed Votes</Form.Label>
+              <Range
+                ref={rangeFieldMissedVotes}
+                defaultValue={showRangeMissedVotes}
+                onChange={rangePctMissedVotes}
+              />
+              <Form.Text className="text-muted">{`${showRangeMissedVotes[0]}% - ${showRangeMissedVotes[1]}%`}</Form.Text>
             </Form.Group>
 
             <Button
@@ -200,7 +229,7 @@ const Home = () => {
       </Offcanvas>
       <div className="filters">
         <Row>
-          <Col>
+          <Col className="col-6">
             <Form.Group className="mb-3">
               <div key={`inline-radio`} className="mb-3">
                 <Form.Label>Chamber: </Form.Label>{" "}
@@ -219,7 +248,7 @@ const Home = () => {
               </div>
             </Form.Group>
           </Col>
-          <Col>
+          <Col className="col-3">
             <InputGroup className="mb-3">
               <FormControl
                 placeholder="session number"
@@ -237,7 +266,18 @@ const Home = () => {
               </Button>
             </InputGroup>
           </Col>
-          <Col>
+          <Col className="col-2">
+            <Button variant="primary">
+              <a
+                href={`${encodeUrl(shareUrl)}`}
+                target="_blank"
+                style={{ color: "white" }}
+              >
+                Share
+              </a>
+            </Button>
+          </Col>
+          <Col className="col-1">
             <Button variant="primary" onClick={handleShow}>
               Filter
             </Button>

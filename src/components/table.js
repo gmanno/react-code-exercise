@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
+import { usStates } from "../util/states";
 import { fab } from "@fortawesome/free-brands-svg-icons";
 import { faEye } from "@fortawesome/free-solid-svg-icons";
 import { httpClient } from "../util/Api";
@@ -29,7 +30,7 @@ const MembersTable = ({
         return "Democrat";
         break;
       default:
-        return party;
+        return `Other (${party})`;
     }
   };
 
@@ -190,7 +191,13 @@ const MembersTable = ({
                 <tr key={item.id}>
                   <td>{showFullName(item)}</td>
                   <td>{showPartyName(item.party)}</td>
-                  <td>{item.state}</td>
+                  <td>
+                    {
+                      usStates.filter((state) => {
+                        return state.abbreviation == item.state;
+                      })[0].name
+                    }
+                  </td>
                   <td>{item.next_election}</td>
                   <td>{item.votes_with_party_pct}</td>
                   <td className="social_media">
