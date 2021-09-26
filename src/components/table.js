@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fab } from "@fortawesome/free-brands-svg-icons";
+import { faEye } from "@fortawesome/free-solid-svg-icons";
+import { httpClient } from "../util/Api";
+import Details from "./details";
 
-import { Table, Pagination, Dropdown } from "react-bootstrap";
-library.add(fab);
+import { Table, Pagination, Dropdown, Modal } from "react-bootstrap";
+library.add(fab, faEye);
 
 const MembersTable = ({
   membersList,
@@ -14,6 +17,8 @@ const MembersTable = ({
   setCurrentPage,
 }) => {
   const [pageSize, setPageSize] = useState(10);
+  const [showModal, setShowModal] = useState(false);
+  const [modal, setModal] = useState({ title: null, item: null });
 
   const showPartyName = (party) => {
     switch (party) {
@@ -70,7 +75,13 @@ const MembersTable = ({
             1
           </Pagination.Item>
         );
-        items.push(<Pagination.Ellipsis />);
+        items.push(
+          <Pagination.Ellipsis
+            onClick={(event) => {
+              changePage(event, currentPage - 4);
+            }}
+          />
+        );
         ini = currentPage - 2;
       }
       for (let page = ini; page <= endPage; page++) {
@@ -102,7 +113,13 @@ const MembersTable = ({
       }
     }
     if (currentPage + 3 < totalPages && totalPages > 7)
-      items.push(<Pagination.Ellipsis />);
+      items.push(
+        <Pagination.Ellipsis
+          onClick={(event) => {
+            changePage(event, currentPage + 4);
+          }}
+        />
+      );
     if (currentPage + 2 < totalPages && totalPages > 7)
       items.push(
         <Pagination.Item
@@ -130,16 +147,37 @@ const MembersTable = ({
     return items;
   };
 
+  const showFullName = (item) => {
+    return `${item.first_name} ${item.middle_name ? item.middle_name : ""} ${
+      item.last_name
+    }`;
+  };
+  const showDetails = (item) => {
+    setModal({ title: null, body: "Loading..." });
+    setShowModal(true);
+    httpClient
+      .get(item.api_uri)
+      .then(({ data }) => {
+        return data.results[0];
+      })
+      .then((result) => {
+        setModal({ title: showFullName(result), item: result });
+      })
+      .catch(() => {});
+  };
+
   return (
     <div className="table-responsive">
       <Table striped bordered className="table">
         <thead>
           <tr>
             <th>Full name</th>
-            <th>Social media</th>
             <th>Party</th>
             <th>State</th>
             <th>Next election</th>
+            <th>% votes w/ party</th>
+            <th>Social media</th>
+            <th>Details</th>
           </tr>
         </thead>
         <tbody>
@@ -150,34 +188,53 @@ const MembersTable = ({
             ) {
               return (
                 <tr key={item.id}>
-                  <td>
-                    {`${item.first_name} ${
-                      item.middle_name ? item.middle_name : ""
-                    } ${item.last_name}`}
-                  </td>
-                  <td className="social_media">
-                    <a
-                      href={`https://twitter.com/${item.twitter_account}`}
-                      target="_blank"
-                    >
-                      <FontAwesomeIcon icon={["fab", "twitter"]} />
-                    </a>
-                    <a
-                      href={`https://facebook.com/${item.facebook_account}`}
-                      target="_blank"
-                    >
-                      <FontAwesomeIcon icon={["fab", "facebook"]} />
-                    </a>
-                    <a
-                      href={`https://youtube.com/${item.youtube_account}`}
-                      target="_blank"
-                    >
-                      <FontAwesomeIcon icon={["fab", "youtube"]} />
-                    </a>
-                  </td>
+                  <td>{showFullName(item)}</td>
                   <td>{showPartyName(item.party)}</td>
                   <td>{item.state}</td>
                   <td>{item.next_election}</td>
+                  <td>{item.votes_with_party_pct}</td>
+                  <td className="social_media">
+                    {item.twitter_account != null ? (
+                      <a
+                        href={`https://twitter.com/${item.twitter_account}`}
+                        target="_blank"
+                      >
+                        <FontAwesomeIcon icon={["fab", "twitter"]} />
+                      </a>
+                    ) : (
+                      ""
+                    )}
+                    {item.facebook_account != null ? (
+                      <a
+                        href={`https://facebook.com/${item.facebook_account}`}
+                        target="_blank"
+                      >
+                        <FontAwesomeIcon icon={["fab", "facebook"]} />
+                      </a>
+                    ) : (
+                      ""
+                    )}
+                    {item.youtube_account != null ? (
+                      <a
+                        href={`https://youtube.com/${item.youtube_account}`}
+                        target="_blank"
+                      >
+                        <FontAwesomeIcon icon={["fab", "youtube"]} />
+                      </a>
+                    ) : (
+                      ""
+                    )}
+                  </td>
+                  <td>
+                    <a
+                      href="#"
+                      onClick={() => {
+                        showDetails(item);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faEye} />
+                    </a>
+                  </td>
                 </tr>
               );
             }
@@ -233,6 +290,8 @@ const MembersTable = ({
       ) : (
         ""
       )}
+
+      <Details show={showModal} setShow={setShowModal} data={modal} />
     </div>
   );
 };

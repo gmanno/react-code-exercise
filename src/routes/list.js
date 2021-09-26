@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { httpClient } from "../util/Api";
-
+import { usStates } from "../util/states";
 import { useForm } from "react-hook-form";
+import { Range } from "rc-slider";
+import "rc-slider/assets/index.css";
 
 import {
   InputGroup,
@@ -21,6 +23,8 @@ const Home = () => {
   const [session, setSession] = useState(115); // 115th congressional session
   const sessionField = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [showRange, setShowRange] = useState("0% - 100%");
+  const rangeField = useRef(null);
   const [showCanvas, setShowCanvas] = useState(false);
 
   const [totalPages, setTotalPages] = useState(0);
@@ -85,8 +89,25 @@ const Home = () => {
               return values[`${filter}`] === item.party;
             });
             break;
+          case "gender":
+            filtered = filtered.filter((item) => {
+              return values[`${filter}`] === item.gender;
+            });
+            break;
+          case "state":
+            filtered = filtered.filter((item) => {
+              return values[`${filter}`] === item.state;
+            });
+            break;
         }
       }
+    });
+
+    filtered = filtered.filter((item) => {
+      return (
+        rangeField.current.state.bounds[0] <= item.votes_with_party_pct &&
+        rangeField.current.state.bounds[1] >= item.votes_with_party_pct
+      );
     });
 
     setTotalPages(Math.ceil(filtered.length / 10));
@@ -100,6 +121,10 @@ const Home = () => {
   };
   const changeSession = (val) => {
     setSession(sessionField.current.value);
+  };
+
+  const rangePct = (event) => {
+    setShowRange(`${event[0]}% - ${event[1]}%`);
   };
   return (
     <>
@@ -128,17 +153,46 @@ const Home = () => {
             </Form.Group>
             <Form.Group className="mb-3" controlId="party">
               <Form.Label>Party</Form.Label>
-              <Form.Select
-                aria-label="Default select example"
-                {...register("party")}
-              >
+              <Form.Select aria-label="Select party" {...register("party")}>
                 <option value="">All</option>
                 <option value="R">Republican</option>
                 <option value="D">Democrat</option>
               </Form.Select>
             </Form.Group>
+            <Form.Group className="mb-3" controlId="gender">
+              <Form.Label>Gender</Form.Label>
+              <Form.Select aria-label="Select Gender" {...register("gender")}>
+                <option value="">All</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="state">
+              <Form.Label>State</Form.Label>
+              <Form.Select aria-label="Select state" {...register("state")}>
+                <option value="">All</option>
+                {usStates.map((state) => {
+                  return (
+                    <option value={state.abbreviation}>{state.name}</option>
+                  );
+                })}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group controlId="votes_with_party_percentage">
+              <Form.Label>Votes With Party</Form.Label>
+              <Range
+                ref={rangeField}
+                defaultValue={[0, 100]}
+                onChange={rangePct}
+              />
+              <Form.Text className="text-muted">{showRange}</Form.Text>
+            </Form.Group>
 
-            <Button variant="primary" type="submit">
+            <Button
+              style={{ marginTop: "10px" }}
+              variant="primary"
+              type="submit"
+            >
               Submit
             </Button>
           </Form>
