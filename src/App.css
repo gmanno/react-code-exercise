@@ -25,3 +25,10 @@
 .form-check-label {
   text-transform: capitalize;
 }
+div.filters {
+  padding: 10px;
+}
+
+td.social_media a {
+  margin: 0 3px;
+}

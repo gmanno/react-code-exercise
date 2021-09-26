@@ -1,44 +1,49 @@
 import React, { useEffect, useState, useRef } from "react";
 import { httpClient } from "../util/Api";
+
+import { useForm } from "react-hook-form";
+
 import {
-  Table,
   InputGroup,
   Row,
   Col,
   Button,
-  Modal,
+  Offcanvas,
   Spinner,
   Form,
   FormControl,
 } from "react-bootstrap";
-import Pagination from "../components/pagination";
+import Table from "../components/table";
 
 const Home = () => {
+  const { register, handleSubmit } = useForm();
   const chambers = ["senate", "house"];
   const [session, setSession] = useState(115); // 115th congressional session
   const sessionField = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [dataTable, setDataTable] = useState(null);
-  const [currentPage, setCurrentPage] = useState(null);
-  const [totalPages, setTotalPages] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [showCanvas, setShowCanvas] = useState(false);
+
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [chamber, setChamber] = useState("senate"); // or 'house'
   const [membersList, setMembersList] = useState(null);
-  const [tableItems, setTableItems] = useState(null);
+  const [filteredMembersList, setFilteredMembersList] = useState(null);
 
   const getMembers = () => {
     setLoading(true);
     httpClient
       .get(`${session}/${chamber}/members.json`)
       .then(({ data }) => {
-        setTotalPages(Math.ceil(data.results[0].num_results / pageSize));
         return data.results[0];
       })
-      .then(({ members }) => {
+      .then(({ members, num_results }) => {
+        if (num_results == 0) {
+          alert("No records found");
+        }
         setMembersList(members);
+        setFilteredMembersList(members);
+        setTotalPages(Math.ceil(members.length / 10));
         setLoading(false);
-        setCurrentPage(1);
       })
       .catch(() => {});
   };
@@ -46,81 +51,48 @@ const Home = () => {
     getMembers();
   }, [session, chamber]);
 
-  useEffect(() => {
-    if (currentPage !== null) tableContent();
-  }, [membersList, currentPage]);
-
-  const tableContent = () => {
-    setDataTable(
-      <div className="table-responsive">
-        <Table striped bordered className="table">
-          <thead>
-            <tr>
-              <th>Full name</th>
-              <th>Social media</th>
-              <th>Party</th>
-              <th>State</th>
-              <th>Up for election in</th>
-            </tr>
-          </thead>
-          <tbody>{renderItems()}</tbody>
-        </Table>
-        <Pagination
-          totalPages={totalPages}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-        />
-      </div>
-    );
-  };
-
-  const renderItems = () => {
-    return membersList.map((item, index) => {
-      if (
-        index < pageSize * currentPage &&
-        index >= pageSize * (currentPage - 1)
-      ) {
-        return (
-          <tr key={item.id}>
-            <th>{`${item.first_name} ${
-              item.middle_name ? item.middle_name : ""
-            } ${item.last_name}`}</th>
-            <td>{item.twitter_account}</td>
-            <td>{showPartyName(item.party)}</td>
-            <td>{item.state}</td>
-            <td>{item.next_election}</td>
-          </tr>
-        );
-      }
-    });
-  };
-
-  const changePage = (event, page) => {
-    event.preventDefault();
-  };
-
-  const showPartyName = (party) => {
-    switch (party) {
-      case "R":
-        return "Republican";
-        break;
-      case "D":
-        return "Democrat";
-        break;
-      default:
-        return party;
-    }
-  };
-
   const handleShow = () => {
-    setShowModal(true);
+    setShowCanvas(true);
   };
   const handleClose = () => {
-    setShowModal(false);
+    setShowCanvas(false);
   };
-  const handleSubmit = (event, values) => {
-    event.preventDefault();
-    console.log(event.target);
+  const onSubmit = (values) => {
+    let filtered = membersList;
+    let fields = [];
+    Object.keys(values).forEach((filter) => {
+      if (values[`${filter}`] != "") {
+        switch (filter) {
+          case "name":
+            filtered = filtered.filter((item) => {
+              let full_name = `${item.first_name}${
+                item.middle_name ? item.middle_name : ""
+              }${item.last_name}`
+                .toUpperCase()
+                .replace(/\ /g, "");
+              return full_name.includes(
+                values[`${filter}`].toUpperCase().replace(/\ /g, "")
+              );
+            });
+            break;
+          case "next_election":
+            filtered = filtered.filter((item) => {
+              return values[`${filter}`] === item.next_election;
+            });
+            break;
+          case "party":
+            filtered = filtered.filter((item) => {
+              return values[`${filter}`] === item.party;
+            });
+            break;
+        }
+      }
+    });
+
+    setTotalPages(Math.ceil(filtered.length / 10));
+    setFilteredMembersList(filtered);
+    setCurrentPage(1);
+    setShowCanvas(false);
   };
 
   const changeChamber = (val) => {
@@ -131,100 +103,112 @@ const Home = () => {
   };
   return (
     <>
-      {/* <Button variant="primary" onClick={handleShow}>
-        Filter
-      </Button>
-
-      <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>Filter</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Chamber</Form.Label>
-
-              <div key={`inline-radio`} className="mb-3">
-                <Form.Check
-                  inline
-                  defaultChecked={chamber === "senate"}
-                  label="Senate"
-                  name="group1"
-                  type="radio"
-                  id={`inline-radio-1`}
-                />
-                <Form.Check
-                  inline
-                  defaultChecked={chamber === "house"}
-                  label="House"
-                  name="group1"
-                  type="radio"
-                  id={`inline-radio-2`}
-                />
-              </div>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Session</Form.Label>
+      <Offcanvas show={showCanvas} placement="end" onHide={handleClose}>
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Filter</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          <Form onSubmit={handleSubmit(onSubmit)}>
+            <Form.Group className="mb-3" controlId="name">
+              <Form.Label>Name</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Session"
-                defaultValue={session}
+                placeholder="Serch by name"
+                {...register("name")}
               />
             </Form.Group>
 
+            <Form.Group className="mb-3" controlId="next_election">
+              <Form.Label>Next Election</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Year"
+                {...register("next_election")}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="party">
+              <Form.Label>Party</Form.Label>
+              <Form.Select
+                aria-label="Default select example"
+                {...register("party")}
+              >
+                <option value="">All</option>
+                <option value="R">Republican</option>
+                <option value="D">Democrat</option>
+              </Form.Select>
+            </Form.Group>
+
             <Button variant="primary" type="submit">
-              Search
+              Submit
             </Button>
           </Form>
-        </Modal.Body>
-      </Modal> */}
-      <Row>
-        <Col>
-          <Form.Group className="mb-3">
-            <div key={`inline-radio`} className="mb-3">
-              <Form.Label>Chamber: </Form.Label>{" "}
-              {chambers.map((item) => (
-                <Form.Check
-                  inline
-                  defaultChecked={chamber === item}
-                  onChange={() => changeChamber(item)}
-                  key={item}
-                  label={item}
-                  name="chamber"
-                  type="radio"
-                  id={`inline-radio-${item}`}
-                />
-              ))}
-            </div>
-          </Form.Group>
-        </Col>
-        <Col>
-          <InputGroup className="mb-3">
-            <FormControl
-              placeholder="session number"
-              defaultValue={session}
-              ref={sessionField}
-            />
-            <Button
-              onClick={(ev) => {
-                changeSession(ev);
-              }}
-              variant="outline-secondary"
-              id="button-addon2"
-            >
-              Get Session
+        </Offcanvas.Body>
+      </Offcanvas>
+      <div className="filters">
+        <Row>
+          <Col>
+            <Form.Group className="mb-3">
+              <div key={`inline-radio`} className="mb-3">
+                <Form.Label>Chamber: </Form.Label>{" "}
+                {chambers.map((item) => (
+                  <Form.Check
+                    inline
+                    defaultChecked={chamber === item}
+                    onChange={() => changeChamber(item)}
+                    key={item}
+                    label={item}
+                    name="chamber"
+                    type="radio"
+                    id={`inline-radio-${item}`}
+                  />
+                ))}
+              </div>
+            </Form.Group>
+          </Col>
+          <Col>
+            <InputGroup className="mb-3">
+              <FormControl
+                placeholder="session number"
+                defaultValue={session}
+                ref={sessionField}
+              />
+              <Button
+                onClick={(ev) => {
+                  changeSession(ev);
+                }}
+                variant="outline-secondary"
+                id="button-addon2"
+              >
+                Get Session
+              </Button>
+            </InputGroup>
+          </Col>
+          <Col>
+            <Button variant="primary" onClick={handleShow}>
+              Filter
             </Button>
-          </InputGroup>
-        </Col>
-      </Row>
+          </Col>
+        </Row>
+      </div>
       <Row>
         {loading ? (
           <Spinner animation="border" role="status">
             <span className="visually-hidden">Loading...</span>
           </Spinner>
         ) : (
-          <Col>{membersList != null ? dataTable : ""}</Col>
+          <Col>
+            {membersList != null ? (
+              <Table
+                membersList={filteredMembersList}
+                setTotalPages={setTotalPages}
+                totalPages={totalPages}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
+            ) : (
+              ""
+            )}
+          </Col>
         )}
       </Row>
     </>
