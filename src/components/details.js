@@ -17,7 +17,7 @@ const details = ({ show, setShow, data }) => {
           <Accordion>
             {data.item.roles.map((role, i) => {
               return (
-                <Accordion.Item eventKey={i}>
+                <Accordion.Item eventKey={i} key={role.congress}>
                   <Accordion.Header>
                     #{role.congress} - {role.title} - ({role.start_date} /{" "}
                     {role.end_date})
@@ -25,8 +25,12 @@ const details = ({ show, setShow, data }) => {
                   <Accordion.Body>
                     <h5>Comittees</h5>
                     <ul>
-                      {role.committees.map((comittee) => {
-                        return <li>{comittee.name}</li>;
+                      {role.committees.map((comittee, cInd) => {
+                        return (
+                          <li key={`com_${role.congress}_${cInd}`}>
+                            {comittee.name}
+                          </li>
+                        );
                       })}
                     </ul>
                   </Accordion.Body>

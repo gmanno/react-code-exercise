@@ -78,6 +78,7 @@ const MembersTable = ({
         );
         items.push(
           <Pagination.Ellipsis
+            key={"ellispsis1"}
             onClick={(event) => {
               changePage(event, currentPage - 4);
             }}
@@ -116,6 +117,7 @@ const MembersTable = ({
     if (currentPage + 3 < totalPages && totalPages > 7)
       items.push(
         <Pagination.Ellipsis
+          key={"ellispsis2"}
           onClick={(event) => {
             changePage(event, currentPage + 4);
           }}

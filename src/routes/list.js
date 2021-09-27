@@ -38,25 +38,68 @@ const Home = () => {
   const rangeField = useRef(null);
   const rangeFieldMissedVotes = useRef(null);
 
+  const checkMemberFromStorage = (chamberData, chamber, session) => {
+    console.log(chamberData);
+    try {
+      let { members } = chamberData.filter(
+        (item) =>
+          item.chamberName === chamber &&
+          item.sessionNumber === parseInt(session)
+      )[0];
+
+      return members;
+    } catch (error) {
+      return null;
+    }
+  };
+
   const getMembers = () => {
     setLoading(true);
     setShareUrl(`?chamber=${chamber}&session=${session}`);
-    httpClient
-      .get(`${session}/${chamber}/members.json`)
-      .then(({ data }) => {
-        return data.results[0];
-      })
-      .then(({ members, num_results }) => {
-        if (num_results == 0) {
-          alert("No records found");
-        }
-        setMembersList(members);
-        setCurrentPage(1);
-        setFilteredMembersList(members);
-        setTotalPages(Math.ceil(members.length / 10));
-        setLoading(false);
-      })
-      .catch(() => {});
+
+    var chamberData = [];
+    try {
+      chamberData = JSON.parse(sessionStorage.getItem("chamberData"));
+      if (chamberData == null) {
+        chamberData = [];
+      }
+    } catch (error) {
+      chamberData = [];
+    }
+
+    let members = checkMemberFromStorage(chamberData, chamber, session);
+    if (members) {
+      setMembersList(members);
+      setCurrentPage(1);
+      setFilteredMembersList(members);
+      setTotalPages(Math.ceil(members.length / 10));
+      setLoading(false);
+    } else {
+      httpClient
+        .get(`${session}/${chamber}/members.json`)
+        .then(({ data }) => {
+          return data.results[0];
+        })
+        .then(({ members, num_results }) => {
+          if (num_results == 0) {
+            alert("No records found");
+          }
+
+          chamberData.push({
+            chamberName: chamber,
+            sessionNumber: parseInt(session),
+            members: members,
+          });
+
+          sessionStorage.setItem("chamberData", JSON.stringify(chamberData));
+          setMembersList(members);
+          setCurrentPage(1);
+          setFilteredMembersList(members);
+          setTotalPages(Math.ceil(members.length / 10));
+          setLoading(false);
+        })
+        .catch(() => {});
+    }
   };
   useEffect(() => {
     getMembers();
@@ -174,17 +217,29 @@ const Home = () => {
             <Form.Group className="mb-3" controlId="party">
               <Form.Label>Party</Form.Label>
               <Form.Select aria-label="Select party" {...register("party")}>
-                <option value="">All</option>
-                <option value="R">Republican</option>
-                <option value="D">Democrat</option>
+                <option key={1} value="">
+                  All
+                </option>
+                <option key={2} value="R">
+                  Republican
+                </option>
+                <option key={3} value="D">
+                  Democrat
+                </option>
               </Form.Select>
             </Form.Group>
             <Form.Group className="mb-3" controlId="gender">
               <Form.Label>Gender</Form.Label>
               <Form.Select aria-label="Select Gender" {...register("gender")}>
-                <option value="">All</option>
-                <option value="M">Male</option>
-                <option value="F">Female</option>
+                <option key={1} value="">
+                  All
+                </option>
+                <option key={2} value="M">
+                  Male
+                </option>
+                <option key={3} value="F">
+                  Female
+                </option>
               </Form.Select>
             </Form.Group>
             <Form.Group className="mb-3" controlId="state">
@@ -193,7 +248,9 @@ const Home = () => {
                 <option value="">All</option>
                 {usStates.map((state) => {
                   return (
-                    <option value={state.abbreviation}>{state.name}</option>
+                    <option key={state.abbreviation} value={state.abbreviation}>
+                      {state.name}
+                    </option>
                   );
                 })}
               </Form.Select>
