@@ -3,9 +3,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { usStates } from "../util/states";
 import { fab } from "@fortawesome/free-brands-svg-icons";
-import { faEye } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faMapMarked } from "@fortawesome/free-solid-svg-icons";
 import { httpClient } from "../util/Api";
 import Details from "./details";
+import OfficeMap from "./officeMap";
+import axios from "axios";
 
 import { Table, Pagination, Dropdown, Modal } from "react-bootstrap";
 library.add(fab, faEye);
@@ -20,6 +22,8 @@ const MembersTable = ({
   const [pageSize, setPageSize] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [modal, setModal] = useState({ title: null, item: null });
+  const [showModalMap, setShowModalMap] = useState(false);
+  const [modalMap, setModalMap] = useState(null);
 
   const showPartyName = (party) => {
     switch (party) {
@@ -169,6 +173,19 @@ const MembersTable = ({
       .catch(() => {});
   };
 
+  const showMap = async (office) => {
+    let lat_lng = await axios
+      .post(`http://18.223.117.221:4000/location`, {
+        address: office,
+      })
+      .then(({ data }) => {
+        return data.location.geometry.location;
+      });
+
+    setModalMap({ address: office, geo: lat_lng });
+    setShowModalMap(true);
+  };
+
   return (
     <div className="table-responsive">
       <Table striped bordered className="table">
@@ -234,7 +251,15 @@ const MembersTable = ({
                       ""
                     )}
                   </td>
-                  <td>
+                  <td className="social_media">
+                    <a
+                      href="#"
+                      onClick={() => {
+                        showMap(item.office);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faMapMarked} />
+                    </a>
                     <a
                       href="#"
                       onClick={() => {
@@ -301,6 +326,11 @@ const MembersTable = ({
       )}
 
       <Details show={showModal} setShow={setShowModal} data={modal} />
+      <OfficeMap
+        show={showModalMap}
+        setShow={setShowModalMap}
+        location={modalMap}
+      />
     </div>
   );
 };

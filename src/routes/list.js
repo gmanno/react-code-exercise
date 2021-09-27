@@ -297,6 +297,7 @@ const Home = () => {
                     onChange={() => changeChamber(item)}
                     key={item}
                     label={item}
+                    disabled={loading}
                     name="chamber"
                     type="radio"
                     id={`inline-radio-${item}`}
@@ -316,6 +317,7 @@ const Home = () => {
                 onClick={(ev) => {
                   changeSession(ev);
                 }}
+                disabled={loading}
                 variant="outline-secondary"
                 id="button-addon2"
               >

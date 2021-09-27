@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Accordion, Card } from "react-bootstrap";
+import { Modal, Button, Accordion } from "react-bootstrap";
 
 const details = ({ show, setShow, data }) => {
   const handleClose = () => {
