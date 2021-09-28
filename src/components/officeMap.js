@@ -6,7 +6,6 @@ const AnyReactComponent = ({ text }) => <div>{text}</div>;
 
 const OfficeMap = ({ show, setShow, location }) => {
   const handleClose = () => {
-    setBody("Loading...");
     setShow(false);
   };
 
@@ -31,7 +30,7 @@ const OfficeMap = ({ show, setShow, location }) => {
       onHide={handleClose}
     >
       <Modal.Header closeButton>
-        <Modal.Title>Office location</Modal.Title>
+        <Modal.Title>{location ? location.address : ""}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div style={{ height: "70vh", width: "100%" }}>
@@ -40,7 +39,7 @@ const OfficeMap = ({ show, setShow, location }) => {
               bootstrapURLKeys={{
                 key: "AIzaSyBEO5ZEMGgtSxbbRhW67IwkZiKu7yEGSFw",
               }}
-              defaultZoom={18}
+              defaultZoom={17}
               defaultCenter={[location.geo.lat, location.geo.lng]}
               yesIWantToUseGoogleMapApiInternals
               onGoogleApiLoaded={({ map, maps }) => renderMarkers(map, maps)}

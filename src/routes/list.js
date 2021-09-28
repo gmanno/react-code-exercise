@@ -18,10 +18,15 @@ import {
 } from "react-bootstrap";
 import Table from "../components/table";
 
-const Home = () => {
+const List = (props) => {
+  const queryParams = new URLSearchParams(props.location.search);
   const chambers = ["senate", "house"];
-  const [chamber, setChamber] = useState("senate"); // or 'house'
-  const [session, setSession] = useState(115); // 115th congressional session
+  const [chamber, setChamber] = useState(
+    props.location.search ? queryParams.get("chamber") : "senate"
+  ); // or 'house'
+  const [session, setSession] = useState(
+    props.location.search ? queryParams.get("session") : 115
+  ); // 115th congressional session
   const [shareUrl, setShareUrl] = useState(
     `?chamber=${chamber}&session=${session}`
   );
@@ -39,7 +44,6 @@ const Home = () => {
   const rangeFieldMissedVotes = useRef(null);
 
   const checkMemberFromStorage = (chamberData, chamber, session) => {
-    console.log(chamberData);
     try {
       let { members } = chamberData.filter(
         (item) =>
@@ -59,7 +63,7 @@ const Home = () => {
 
     var chamberData = [];
     try {
-      chamberData = JSON.parse(sessionStorage.getItem("chamberData"));
+      chamberData = JSON.parse(localStorage.getItem("chamberData"));
       if (chamberData == null) {
         chamberData = [];
       }
@@ -91,7 +95,7 @@ const Home = () => {
             members: members,
           });
 
-          sessionStorage.setItem("chamberData", JSON.stringify(chamberData));
+          localStorage.setItem("chamberData", JSON.stringify(chamberData));
           setMembersList(members);
           setCurrentPage(1);
           setFilteredMembersList(members);
@@ -101,9 +105,64 @@ const Home = () => {
         .catch(() => {});
     }
   };
+
   useEffect(() => {
     getMembers();
   }, [session, chamber]);
+
+  useEffect(() => {
+    if (props.location.search && membersList) {
+      filterByUrl();
+    }
+  }, [membersList]);
+
+  const filterByUrl = () => {
+    let filtered = membersList;
+    let url = "";
+    queryParams.forEach((value, field) => {
+      if (value != "") {
+        url += `&${field}=${value}`;
+        switch (field) {
+          case "name":
+            filtered = filtered.filter((item) => {
+              let full_name = `${item.first_name}${
+                item.middle_name ? item.middle_name : ""
+              }${item.last_name}`
+                .toUpperCase()
+                .replace(/\ /g, "");
+              return full_name.includes(value.toUpperCase().replace(/\ /g, ""));
+            });
+            break;
+          case "next_election":
+            filtered = filtered.filter((item) => {
+              return value === item.next_election;
+            });
+            break;
+          case "party":
+            filtered = filtered.filter((item) => {
+              return value === item.party;
+            });
+            break;
+          case "gender":
+            filtered = filtered.filter((item) => {
+              return value === item.gender;
+            });
+            break;
+          case "state":
+            filtered = filtered.filter((item) => {
+              return value === item.state;
+            });
+            break;
+        }
+      }
+    });
+
+    setShareUrl(`?chamber=${chamber}&session=${session}${url}`);
+
+    setTotalPages(Math.ceil(filtered.length / 10));
+    setFilteredMembersList(filtered);
+    setCurrentPage(1);
+  };
 
   const handleShow = () => {
     setShowCanvas(true);
@@ -113,7 +172,7 @@ const Home = () => {
   };
   const onSubmit = (values) => {
     let filtered = membersList;
-    let fields = [];
+
     let url = "";
     Object.keys(values).forEach((filter) => {
       if (values[`${filter}`] != "") {
@@ -157,14 +216,18 @@ const Home = () => {
 
     filtered = filtered.filter((item) => {
       return (
-        rangeField.current.state.bounds[0] <= item.votes_with_party_pct &&
-        rangeField.current.state.bounds[1] >= item.votes_with_party_pct
+        (rangeField.current.state.bounds[0] <= item.votes_with_party_pct &&
+          rangeField.current.state.bounds[1] >= item.votes_with_party_pct) ||
+        (rangeField.current.state.bounds[0] == 0 &&
+          rangeField.current.state.bounds[1] == 100)
       );
     });
     filtered = filtered.filter((item) => {
       return (
-        rangeFieldMissedVotes.current.state.bounds[0] <= item.missed_votes &&
-        rangeFieldMissedVotes.current.state.bounds[1] >= item.missed_votes
+        (rangeFieldMissedVotes.current.state.bounds[0] <= item.missed_votes &&
+          rangeFieldMissedVotes.current.state.bounds[1] >= item.missed_votes) ||
+        (rangeFieldMissedVotes.current.state.bounds[0] == 0 &&
+          rangeFieldMissedVotes.current.state.bounds[1] == 100)
       );
     });
 
@@ -368,4 +431,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default List;

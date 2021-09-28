@@ -4,7 +4,7 @@ import List from "./list";
 const App = ({ match }) => (
   <div>
     <Switch>
-      <Route path={`${match.url}`} component={List} />
+      <Route path={`${match.url}`} render={(props) => <List {...props} />} />
     </Switch>
   </div>
 );

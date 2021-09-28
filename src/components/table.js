@@ -9,7 +9,13 @@ import Details from "./details";
 import OfficeMap from "./officeMap";
 import axios from "axios";
 
-import { Table, Pagination, Dropdown, Modal } from "react-bootstrap";
+import {
+  Table,
+  Pagination,
+  Dropdown,
+  Tooltip,
+  OverlayTrigger,
+} from "react-bootstrap";
 library.add(fab, faEye);
 
 const MembersTable = ({
@@ -252,22 +258,37 @@ const MembersTable = ({
                     )}
                   </td>
                   <td className="social_media">
-                    <a
-                      href="#"
-                      onClick={() => {
-                        showMap(item.office);
-                      }}
+                    <OverlayTrigger
+                      key={`maps_${index}`}
+                      placement="top"
+                      overlay={
+                        <Tooltip id={`tooltip-top`}>Show map location</Tooltip>
+                      }
                     >
-                      <FontAwesomeIcon icon={faMapMarked} />
-                    </a>
-                    <a
-                      href="#"
-                      onClick={() => {
-                        showDetails(item);
-                      }}
+                      <a
+                        href="#"
+                        onClick={() => {
+                          showMap(item.office);
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faMapMarked} />
+                      </a>
+                    </OverlayTrigger>
+
+                    <OverlayTrigger
+                      key={`detail_${index}`}
+                      placement="top"
+                      overlay={<Tooltip id={`tooltip-top`}>Details</Tooltip>}
                     >
-                      <FontAwesomeIcon icon={faEye} />
-                    </a>
+                      <a
+                        href="#"
+                        onClick={() => {
+                          showDetails(item);
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faEye} />
+                      </a>
+                    </OverlayTrigger>
                   </td>
                 </tr>
               );

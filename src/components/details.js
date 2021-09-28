@@ -9,7 +9,6 @@ const details = ({ show, setShow, data }) => {
   const [body, setBody] = useState("Loading...");
 
   useEffect(() => {
-    console.log(data.item);
     if (data.item != null)
       setBody(
         <>
