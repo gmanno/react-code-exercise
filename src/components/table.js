@@ -181,7 +181,7 @@ const MembersTable = ({
 
   const showMap = async (office) => {
     let lat_lng = await axios
-      .post(`http://18.223.117.221:4000/location`, {
+      .post(`https://places-two.vercel.app/api/places`, {
         address: office,
       })
       .then(({ data }) => {
