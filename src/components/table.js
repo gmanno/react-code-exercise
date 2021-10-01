@@ -8,6 +8,7 @@ import { httpClient } from "../util/Api";
 import Details from "./details";
 import OfficeMap from "./officeMap";
 import axios from "axios";
+import { API } from "aws-amplify";
 
 import {
   Table,
