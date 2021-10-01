@@ -1,0 +1,23 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-reactcodeexercise-dev-164324-authRole",
+      "UnauthRoleArn": "arn:aws:iam::531330757223:role/amplify-reactcodeexercise-dev-164324-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::531330757223:role/amplify-reactcodeexercise-dev-164324-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-reactcodeexercise-dev-164324-deployment",
+      "UnauthRoleName": "amplify-reactcodeexercise-dev-164324-unauthRole",
+      "StackName": "amplify-reactcodeexercise-dev-164324",
+      "StackId": "arn:aws:cloudformation:us-east-1:531330757223:stack/amplify-reactcodeexercise-dev-164324/da161090-22ef-11ec-95ff-12a534df9bbf",
+      "AmplifyAppId": "d3sncwmuz88bh3"
+    },
+    "categories": {
+      "function": {
+        "places": {
+          "deploymentBucketName": "amplify-reactcodeexercise-dev-164324-deployment",
+          "s3Key": "amplify-builds/places-7943366f3975374b3364-build.zip"
+        }
+      }
+    }
+  }
+}
